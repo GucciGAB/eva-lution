@@ -1,11 +1,22 @@
 <?php
+session_start();
+if (!isset($_SESSION['user'])) {
+    header('location: ../index.php');
+    exit;
+}
+
+if ($_SESSION['user']['role'] !== 'admin') {
+    // Redirect to an unauthorized page or login page if they don't have the correct role
+    header('Location: unauthorized.php');
+    exit;
+}
+
 include 'header.php';
 include 'sidebar.php';
 include 'footer.php';
 include '../database/connection.php';
 
-$id = isset($_POST['id']) ? $_POST['id'] : null;
-$subjects = null;
+$id = isset($_GET['subject_id']) ? $_GET['subject_id'] : null;
 
 $stmt = $conn->prepare('SELECT * FROM subject_list');
 $stmt->execute();
@@ -14,16 +25,15 @@ $subjects = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 if ($id) {
     $stmt = $conn->prepare("SELECT * FROM subject_list WHERE subject_id = ?");
-    $stmt->execute([$subject_id]);
-    $subjects = $stmt->fetch();
+    $stmt->execute([$id]);
+    $subjects = $stmt->fetch(PDO::FETCH_ASSOC);
 }
-// Check if form is submitted via POST
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete_id'])) {
     $code = $_POST['code'];
     $subject = $_POST['subject'];
     $description = $_POST['description'];
 
-    // If ID exists, update the class; otherwise, insert a new class
     if ($id) {
         $query = "UPDATE subject_list SET code = ?, subject = ?, description = ? WHERE subject_id = ?";
         $stmt = $conn->prepare($query);
@@ -34,17 +44,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([$code, $subject, $description]);
     }
 
-    // Commit and close the connection
     $conn = null;
 
-    // Flash message for success
     $_SESSION['flash_message'] = 'Data successfully saved.';
     $_SESSION['flash_type'] = 'success';
 
-    // Redirect to class list
     echo "<script>window.location.replace('subject_list.php');</script>";
 
     exit;
 }
+
+if (isset($_POST['delete_id'])) {
+    $delete_id = $_POST['delete_id'];
+
+    $stmt = $conn->prepare('DELETE FROM subject_list WHERE subject_id = :id');
+    $stmt->bindParam(':id', $delete_id, PDO::PARAM_INT);
+
+    if ($stmt->execute()) {
+        echo "<script>alert('Subject is deleted successfully.');</script>";
+    } else {
+        echo "<script>alert('Error deleting subject.');</script>";
+    }
+
+    echo "<script>window.location.replace('subject_list.php');</script>";
+}
+
+$conn = null;
 
 
