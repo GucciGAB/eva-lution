@@ -11,28 +11,26 @@
         data-accordion="false">
         <li class="nav-item dropdown">
           <a href="home.php"
-            class="nav-link nav-home <?php echo basename($_SERVER['PHP_SELF']) == 'home.php' ? 'active' : ''; ?>"
-            style="<?php echo basename($_SERVER['PHP_SELF']) == 'home.php' ? 'background-color: rgb(51, 128, 64); color: #fff; border: 1px solid #343a40;' : 'background-color: #343a40; color: #fff; border: 1px solid #343a40;'; ?>">
+            class="dashboard-link <?php echo basename($_SERVER['PHP_SELF']) == 'home.php' ? 'active' : ''; ?>"
+            style="<?php echo basename($_SERVER['PHP_SELF']) == 'home.php' ? 'background-color: rgb(51, 128, 64); color: #fff; border: 1px solid #343a40;' : ''; ?>">
             <i class="nav-icon fas fa-tachometer-alt"></i>
             <p>Dashboard</p>
           </a>
         </li>
         <li class="nav-item dropdown">
-          <a href="subject_list.php"
-            class="nav-link nav-subject_list <?php echo in_array(basename($_SERVER['PHP_SELF']), ['subject_list.php']) ? 'active' : ''; ?>"
-            style="<?php echo in_array(basename($_SERVER['PHP_SELF']), ['subject_list.php', 'manage_subject.php']) ? 'background-color: rgb(51, 128, 64); color: #fff;' : ''; ?>">
+          <a href="admin_generate_link.php"
+            class="nav-link nav-subject_list <?php echo in_array(basename($_SERVER['PHP_SELF']), ['admin_generate_link.php']) ? 'active' : ''; ?>"
+            style="<?php echo in_array(basename($_SERVER['PHP_SELF']), ['admin_generate_link.php']) ? 'background-color: rgb(51, 128, 64); color: #fff;' : ''; ?>">
             <i class="nav-icon fas fa-th-list"></i>
-            <p>Subjects</p>
+            <p>Account Links</p>
           </a>
         </li>
         <li class="nav-item dropdown">
-          <a href="class_list.php"
-            class="nav-link nav-class_list <?php echo in_array(basename($_SERVER['PHP_SELF']), ['class_list.php']) ? 'active' : ''; ?>"
-            style="<?php echo in_array(basename($_SERVER['PHP_SELF']), ['class_list.php', 'manage_class.php']) ? 'background-color: rgb(51, 128, 64); color: #fff;' : ''; ?>">
-            <i class="nav-icon fas fa-list-alt"></i>
-            <p>
-              Classes
-            </p>
+          <a href="verify_accounts.php"
+            class="nav-link nav-verify_accounts <?php echo in_array(basename($_SERVER['PHP_SELF']), ['verify_accounts.php']) ? 'active' : ''; ?>"
+            style="<?php echo in_array(basename($_SERVER['PHP_SELF']), ['verify_accounts.php']) ? 'background-color: rgb(51, 128, 64); color: #fff;' : ''; ?>">
+            <i class="nav-icon fas fa-th-list"></i>
+            <p>Pending Accounts</p>
           </a>
         </li>
         <li class="nav-item dropdown">
@@ -67,59 +65,55 @@
         </li>
         <li class="nav-item">
           <a href="#"
-            class="nav-link nav-edit_faculty <?php echo in_array(basename($_SERVER['PHP_SELF']), ['new_faculty.php', 'tertiary_faculty_list.php']) ? 'active' : ''; ?>"
-            style="<?php echo in_array(basename($_SERVER['PHP_SELF']), ['new_faculty.php', 'tertiary_faculty_list.php']) ? 'background-color: rgb(51, 128, 64); color: #fff;' : ''; ?>">
-            <i class="nav-icon fas fa-user-friends"></i>
+            class="nav-link nav-edit_user <?php echo in_array(basename($_SERVER['PHP_SELF']), ['new_head_faculty.php', 'head_faculty_list.php']) ? 'active' : ''; ?>"
+            style="<?php echo in_array(basename($_SERVER['PHP_SELF']), ['new_head_faculty.php', 'head_faculty_list.php']) ? 'background-color: rgb(51, 128, 64); color: #fff;' : ''; ?>">
+            <i class="nav-icon fas fa-users"></i>
             <p>
-              Teachers
+              Head Faculties
               <i class="right fas fa-angle-left"></i>
             </p>
           </a>
           <ul class="nav nav-treeview">
             <li class="nav-item">
-              <!-- this will be for Tertiary -->
-              <a href="#" class="nav-link nav-edit_faculty">
-                <i class="right fas fa-angle-left"></i>
-                <p>Tertiary</p>
+              <a href="new_head_faculty.php" class="nav-link nav-new_user tree-item">
+                <i class="nav-icon fas fa-plus-circle"></i>
+                <p>Add New</p>
               </a>
-              <ul class="nav nav-treeview">
-                <li class="nav-item">
-                  <a href="new_faculty.php" class="nav-link nav-new_faculty tree-item">
-                    <i class="nav-icon"></i>
-                    <p>Add New</p>
-                  </a>
-                </li>
-                <li class="nav-item">
-                  <a href="tertiary_faculty_list.php" class="nav-link nav-tertiary_faculty_list tree-item">
-                    <i class="nav-icon"></i>
-                    <p>List</p>
-                  </a>
-                </li>
-              </ul>
             </li>
             <li class="nav-item">
-              <!-- this will be for Secondary -->
-              <a href="#" class="nav-link nav-edit_faculty">
-                <i class="right fas fa-angle-left"></i>
-                <p>Secondary</p>
+              <a href="head_faculty_list.php" class="nav-link nav-user_list tree-item">
+                <i class="nav-icon fas fa-list"></i>
+                <p>List</p>
               </a>
-              <ul class="nav nav-treeview">
-                <li class="nav-item">
-                  <a href="new_faculty.php" class="nav-link nav-new_faculty tree-item">
-                    <i class="nav-icon"></i>
-                    <p>Add New</p>
-                  </a>
-                </li>
-                <li class="nav-item">
-                  <a href="./index.php?page=student_list" class="nav-link nav-faculty_list tree-item">
-                    <i class="nav-icon"></i>
-                    <p>List</p>
-                  </a>
-                </li>
-              </ul>
             </li>
           </ul>
         </li>
+        <li class="nav-item">
+          <a href="#"
+            class="nav-link nav-edit_faculty <?php echo in_array(basename($_SERVER['PHP_SELF']), ['new_faculty.php', 'faculty_list.php']) ? 'active' : ''; ?>"
+            style="<?php echo in_array(basename($_SERVER['PHP_SELF']), ['new_faculty.php', 'faculty_list.php']) ? 'background-color: rgb(51, 128, 64); color: #fff;' : ''; ?>">
+            <i class="nav-icon fas fa-user-friends"></i>
+            <p>
+              Faculties
+              <i class="right fas fa-angle-left"></i>
+            </p>
+          </a>
+          <ul class="nav nav-treeview">
+            <li class="nav-item">
+              <a href="new_faculty.php" class="nav-link nav-new_faculty tree-item">
+                <i class="nav-icon fas fa-plus-circle"></i>
+                <p>Add New Faculty</p>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="tertiary_faculty_list.php" class="nav-link nav-tertiary_faculty_list tree-item">
+                <i class="nav-icon fas fa-list"></i>
+                <p>Faculty List</p>
+              </a>
+            </li>
+          </ul>
+        </li>
+
         <li class="nav-item">
           <a href="#"
             class="nav-link nav-edit_student <?php echo (basename($_SERVER['PHP_SELF']) == 'new_student.php' || basename($_SERVER['PHP_SELF']) == 'student_list.php') ? 'active' : ''; ?>"
@@ -132,21 +126,17 @@
           </a>
           <ul class="nav nav-treeview">
             <li class="nav-item">
-              <a href="new_student.php" class="nav-link nav-new_student tree-item">
-                <i class="nav-icon"></i>
-                <p>Add New</p>
-              </a>
-            </li>
-            <li class="nav-item">
               <a href="student_list.php" class="nav-link nav-student_list tree-item">
-                <i class="nav-icon"></i>
+                <i class="nav-icon fas fa-list"></i>
                 <p>List</p>
               </a>
             </li>
           </ul>
         </li>
         <li class="nav-item dropdown">
-          <a href="./index.php?page=report" class="nav-link nav-report">
+          <a href="report.php"
+            class="nav-link nav-report <?php echo in_array(basename($_SERVER['PHP_SELF']), ['report.php']) ? 'active' : ''; ?>"
+            style="<?php echo in_array(basename($_SERVER['PHP_SELF']), ['report.php']) ? 'background-color: rgb(51, 128, 64); color: #fff;' : ''; ?>">
             <i class="nav-icon fas fa-list-alt"></i>
             <p>
               Evaluation Report
@@ -166,13 +156,13 @@
           <ul class="nav nav-treeview">
             <li class="nav-item">
               <a href="new_users.php" class="nav-link nav-new_user tree-item">
-                <i class="nav-icon"></i>
+                <i class="nav-icon fas fa-plus-circle"></i>
                 <p>Add New</p>
               </a>
             </li>
             <li class="nav-item">
               <a href="user_list.php" class="nav-link nav-user_list tree-item">
-                <i class="nav-icon"></i>
+                <i class="nav-icon fas fa-list"></i>
                 <p>List</p>
               </a>
             </li>
@@ -183,7 +173,7 @@
   </div>
 </aside>
 <script>
-  $(document).ready(function () {
+  $(document).ready(function() {
     var page = '<?php echo isset($_GET['page']) ? $_GET['page'] : 'home' ?>';
     var s = '<?php echo isset($_GET['s']) ? $_GET['s'] : '' ?>';
     if (s != '')
@@ -202,17 +192,31 @@
 
   })
 
-  document.addEventListener('DOMContentLoaded', function () {
-    // Get all nav links
+  document.addEventListener('DOMContentLoaded', function() {
     const navLinks = document.querySelectorAll('.nav-link');
 
-    // Loop through the links
     navLinks.forEach(link => {
-      // Check if the current link's href matches the current page URL
       if (link.href === window.location.href) {
-        // Add 'active' class to the matching link
         link.classList.add('active');
       }
     });
   });
 </script>
+<style>
+  .dashboard-link {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1.5rem;
+  }
+
+  .dashboard-link:hover {
+    background-color: #495057;
+  }
+
+  .dashboard-link p {
+    margin: 0;
+    font-size: 1rem;
+    margin-left: 0.15rem;
+    color: inherit;
+  }
+</style>

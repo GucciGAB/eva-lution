@@ -3,178 +3,182 @@ include 'handlers/criteria_handler.php';
 
 ?>
 <nav class="main-header">
-	<div class="col-lg-12 mt-3">
-		<div class="card card-outline card-success">
-			<div class="card-header">
-			</div>
-			<div class="card-body">
-				<div class="container-fluid">
-					<div class="row">
-						<div class="col-md-4">
-							<div class="card card-outline card-success">
-								<div class="card-header"><b>Criteria Form</b></div>
-								<div class="card-body">
-									<form action="" id="manage-criteria" method="POST">
-										<input type="hidden" name="criteria_id"
-											value="<?php echo isset($criterias['criteria_id']) ? $criterias['criteria_id'] : ''; ?>">
-										<div class="form-group">
-											<label for="criteria">Criteria</label>
-											<input type="text" name="criteria" class="form-control form-control-sm"
-												value="<?php echo isset($criterias['criteria']) ? $criterias['criteria'] : ''; ?>"
-												required>
-										</div>
-									</form>
-								</div>
-								<div class="card-footer">
-									<div class="d-flex justify-content-end w-100">
-										<button class="btn btn-sm btn-success btn-flat bg-gradient-success mx-1"
-											form="manage-criteria" type="submit">Save</button>
-										<button class="btn btn-sm btn-flat btn-secondary bg-gradient-secondary mx-1"
-											form="manage-criteria" type="reset" onclick="window.location.href = './criteria_list.php';">Cancel</button>
-									</div>
-								</div>
-							</div>
-						</div>
-						<div class="col-md-8">
-							<div class="callout callout-success">
-								<div class="d-flex justify-content-between w-100">
-									<label for=""><b>Criteria List</b></label>
-									<button class="btn btn-sm btn-success btn-flat bg-gradient-success mx-1"
-										form="order-criteria">Save Order</button>
-								</div>
-								<hr>
-
-								<ul class="list-group btn col-md-8" id="ui-sortable-list">
-									<?php
-									$i = 1;
-									foreach ($criterias as $row): ?>
-										<li class="list-group-item text-left">
-											<span class="btn-group dropright float-right">
-												<span type="button" class="btn" data-toggle="dropdown" aria-haspopup="true"
-													aria-expanded="false">
-													<i class="fa fa-ellipsis-v"></i>
-												</span>
-												<div class="dropdown-menu">
-													<a class="dropdown-item"
-														href="criteria_list.php?criteria_id=<?php echo $row['criteria_id']; ?>">Edit</a>
-													<form method="post" action="criteria_list.php" style="display: inline;">
-														<input type="hidden" name="delete_id"
-															value="<?php echo isset($row['criteria_id']) ? $row['criteria_id'] : ''; ?>">
-														<button type="submit" class="dropdown-item"
-															onclick="return confirm('Are you sure you want to delete this criteria?');">Delete</button>
-													</form>
-												</div>
-											</span>
-											<i class="fa fa-bars"></i> <?php echo ucwords($row['criteria']) ?>
-											<input type="hidden" name="criteria_id[]"
-												value="<?php echo isset($row['id']) ?>">
-										</li>
-									<?php endforeach; ?>
-								</ul>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
+    <div class="col-lg-12 mt-3">
+        <div class="col-12 mb-3">
+            <h2 class="text-start"
+                style="font-size: 1.8rem; font-weight: bold; color: #4a4a4a; border-bottom: 2px solid #ccc; padding-bottom: 5px;">
+                Manage Criterias</h2>
+        </div>
+        <div class="card card-outline card-success">
+            <div class="card-header"></div>
+            <div class="card-body">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card card-outline card-success">
+                                <div class="card-header"><b>Criteria Form</b></div>
+                                <div class="card-body">
+                                    <form action="" id="manage-criteria" method="POST">
+                                        <input type="hidden" name="criteria_id"
+                                            value="<?php echo isset($criteria_to_edit['criteria_id']) ? $criteria_to_edit['criteria_id'] : ''; ?>">
+                                        <div class="form-group">
+                                            <label for="criteria">Criteria</label>
+                                            <input type="text" name="criteria" class="form-control form-control-sm"
+                                                value="<?php echo isset($criteria_to_edit['criteria']) ? $criteria_to_edit['criteria'] : ''; ?>"
+                                                required>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="card-footer">
+                                    <div class="d-flex justify-content-end w-100">
+                                        <button class="btn btn-sm btn-success btn-flat bg-gradient-success mx-1"
+                                            form="manage-criteria" type="submit">Save</button>
+                                        <button class="btn btn-sm btn-flat btn-secondary bg-gradient-secondary mx-1"
+                                            form="manage-criteria" type="reset"
+                                            onclick="window.location.href = './criteria_list.php';">Cancel</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="callout callout-success">
+                                <div class="d-flex justify-content-between w-100">
+                                    <label for=""><b>Criteria List</b></label>
+                                    <button class="btn btn-sm btn-success btn-flat bg-gradient-success mx-1"
+                                        form="order-criteria">Save Order</button>
+                                </div>
+                                <hr>
+                                <ul class="list-group btn col-md-8" id="ui-sortable-list">
+                                    <?php foreach ($criterias as $row): ?>
+                                        <li class="list-group-item text-left">
+                                            <span class="btn-group dropright float-right">
+                                                <span type="button" class="btn" data-toggle="dropdown" aria-haspopup="true"
+                                                    aria-expanded="false">
+                                                    <i class="fa fa-ellipsis-v"></i>
+                                                </span>
+                                                <div class="dropdown-menu">
+                                                    <a class="dropdown-item"
+                                                        href="criteria_list.php?criteria_id=<?php echo $row['criteria_id']; ?>">Edit</a>
+                                                    <form method="POST" action="criteria_list.php" class="delete-form">
+                                                        <input type="hidden" name="delete_id"
+                                                            value="<?php echo $row['criteria_id']; ?>">
+                                                        <button class="dropdown-item delete-button"
+                                                            type="submit">Delete</button>
+                                                    </form>
+                                                </div>
+                                            </span>
+                                            <i class="fa fa-bars"></i> <?php echo ucwords($row['criteria']); ?>
+                                            <input type="hidden" name="criteria_id" id="criteria_id"
+                                                value="<?php echo $row['criteria_id']; ?>">
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </nav>
 <style>
-	.dropright a:hover {
-		color: black !important;
-	}
+    .dropright a:hover {
+        color: black !important;
+    }
+
+    .list-group-item:hover {
+        color: black !important;
+        font-weight: 700 !important;
+    }
+
+    body {
+        overflow-y: hidden;
+    }
+
+    .main-header {
+        max-height: 95vh;
+        overflow-y: scroll;
+        scrollbar-width: none;
+    }
+
+    .main-header::-webkit-scrollbar {
+        display: none;
+    }
 </style>
 <script>
-	$(document).ready(function () {
-		$('#ui-sortable-list').sortable()
-		$('.edit_criteria').click(function () {
-			var id = $(this).attr('data-id')
-			var criteria = <?php echo json_encode($criteria) ?>;
-			$('#manage-criteria').find("[name='id']").val(criteria[id].id)
-			$('#manage-criteria').find("[name='criteria']").val(criteria[id].criteria)
+    $(document).ready(function () {
+        $('#manage-criteria').on('submit', function (e) {
+            e.preventDefault();
+            var formData = $(this).serialize();
 
-		})
-		$('#manage-criteria').on('reset', function () {
-			$(this).find('input:hidden').val('')
-		})
-		$('.delete_criteria').click(function () {
-			_conf("Are you sure to delete this criteria?", "delete_criteria", [$(this).attr('data-id')])
-		})
-		$('.make_default').click(function () {
-			_conf("Are you sure to make this criteria year as the system default?", "make_default", [$(this).attr('data-id')])
-		})
+            $.ajax({
+                type: 'POST',
+                url: 'criteria_list.php',
+                data: formData,
+                success: function (response) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: 'Criteria saved successfully.',
+                        showConfirmButton: false,
+                        timer: 2000
+                    }).then(() => {
+                        window.location.href = 'criteria_list.php';
+                    });
 
-		$('#manage-criteria').submit(function (e) {
-			e.preventDefault();
-			start_load()
-			$('#msg').html('')
-			$.ajax({
-				url: 'ajax.php?action=save_criteria',
-				method: 'POST',
-				data: $(this).serialize(),
-				success: function (resp) {
-					if (resp == 1) {
-						alert_toast("Data successfully saved.", "success");
-						setTimeout(function () {
-							location.reload()
-						}, 1750)
-					} else if (resp == 2) {
-						$('#msg').html('<div class="alert alert-danger"><i class="fa fa-exclamation-triangle"></i> Criteria already exist.</div>')
-						end_load()
-					}
-				}
-			})
-		})
-		$('#order-criteria').submit(function (e) {
-			e.preventDefault();
-			start_load()
-			$.ajax({
-				url: 'ajax.php?action=save_criteria_order',
-				method: 'POST',
-				data: $(this).serialize(),
-				success: function (resp) {
-					if (resp == 1) {
-						alert_toast("Data successfully saved.", "success");
-						setTimeout(function () {
-							location.reload()
-						}, 1750)
-					}
-				}
-			})
-		})
+                    $('#manage-criteria')[0].reset();
+                },
+                error: function () {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops...',
+                        text: 'Something went wrong!',
+                    });
+                }
+            });
+        });
 
-	})
-	function delete_criteria($id) {
-		start_load()
-		$.ajax({
-			url: 'ajax.php?action=delete_criteria',
-			method: 'POST',
-			data: { id: $id },
-			success: function (resp) {
-				if (resp == 1) {
-					alert_toast("Data successfully deleted", 'success')
-					setTimeout(function () {
-						location.reload()
-					}, 1500)
+        $(document).on('submit', '.delete-form', function (e) {
+            e.preventDefault();
+            var form = this;
 
-				}
-			}
-		})
-	}
-	function make_default($id) {
-		start_load()
-		$.ajax({
-			url: 'ajax.php?action=make_default',
-			method: 'POST',
-			data: { id: $id },
-			success: function (resp) {
-				if (resp == 1) {
-					alert_toast("Dafaut criteria Year Updated", 'success')
-					setTimeout(function () {
-						location.reload()
-					}, 1500)
-				}
-			}
-		})
-	}
+            Swal.fire({
+                title: 'Are you sure?',
+                text: 'This action will permanently delete the criteria.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, delete it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    var criteria_id = $('#criteria_id').val();
+                    $.ajax({
+                        type: 'POST',
+                        url: 'criteria_list.php',
+                        data: $(form).serialize(),
+                        success: function () {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Deleted!',
+                                text: 'Criteria has been deleted.',
+                                showConfirmButton: false,
+                                timer: 2000
+                            }).then(() => {
+
+                                window.location.href = 'criteria_list.php'
+                            });
+                        },
+                        error: function () {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Oops...',
+                                text: 'Failed to delete the criteria!',
+                            });
+                        }
+                    });
+                }
+            });
+        });
+    });
 </script>

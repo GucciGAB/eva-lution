@@ -6,7 +6,7 @@ include "login_handler.php";
         <div class="col-md-6 mt-4">
             <div class="login-box">
                 <div class="login-logo">
-                    <a href="#">Login</a>
+                    <a href="./">Login</a>
                 </div>
                 <div class="card">
                     <div class="card-body login-card-body">
@@ -29,16 +29,17 @@ include "login_handler.php";
                                 </div>
                             </div>
                             <div class="mb-3 text-right">
-                                <a href="forgot_password.php" class="text-decoration-none">Forgot Your Password?</a>
+                                <a href="forgot_password.php?access=allowed" class="text-decoration-none">Forgot Your Password?</a>
                             </div>
-                            <div class="icheck-primary mb-3 text-left">
+                            <!-- <div class="icheck-primary mb-3 text-left">
                                 <input type="checkbox" id="remember" name="remember" <?php echo isset($_COOKIE['email']) ? 'checked' : ''; ?>>
                                 <label for="remember">Remember Me</label>
-                            </div>
+                            </div> -->
                             <div id="loading-spinner" style="display: none;">
                                 <i class="fas fa-spinner fa-spin"></i> Logging in...
                             </div>
-                            <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+                            <br>
+                            <button type="submit" class="btn btn-success btn-block">Sign In</button>
                         </form>
                     </div>
                 </div>
@@ -73,6 +74,5 @@ include "login_handler.php";
         <?php endif; ?>
     </div>
 </div>
-
 
 <?php include 'includes/footer.php'; ?>

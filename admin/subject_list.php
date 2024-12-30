@@ -12,6 +12,12 @@ include 'handlers/subject_handler.php';
                         href="manage_subject.php"><i class="fa fa-plus"></i> Add New</a>
                 </div>
             </div>
+            <div class="row mb-3">
+                <div class="col-8 col-md-4 ms-auto mt-3 mr-3">
+                    <input type="text" id="searchInput" class="form-control form-control-sm"
+                        placeholder="Search Subject">
+                </div>
+            </div>
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-hover table-bordered" id="list">
@@ -46,11 +52,11 @@ include 'handlers/subject_handler.php';
                                                 class="btn btn-success btn-flat manage_subject">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <form method="post" action="subject_list.php" style="display: inline;">
+                                            <form method="post" action="subject_list.php" style="display: inline;"
+                                                class="delete-form">
                                                 <input type="hidden" name="delete_id"
                                                     value="<?php echo isset($row['subject_id']) ? $row['subject_id'] : ''; ?>">
-                                                <button type="submit" class="btn btn-secondary btn-flat delete_subject"
-                                                    onclick="return confirm('Are you sure you want to delete this subject?');">
+                                                <button type="submit" class="btn btn-secondary btn-flat delete_subject">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </form>
@@ -60,8 +66,113 @@ include 'handlers/subject_handler.php';
                             <?php endforeach; ?>
                         </tbody>
                     </table>
+                    <p id="noRecordsMessage" style="display:none; color: black;" class="ml-1">No subjects found.</p>
                 </div>
             </div>
         </div>
     </div>
 </nav>
+<script>
+    $(document).ready(function () {
+
+        $(document).on('submit', '.delete-form', function (e) {
+            e.preventDefault();
+            var form = this;
+
+            Swal.fire({
+                title: 'Are you sure?',
+                text: 'This action will permanently delete the subject.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, delete it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    var subject_id = $('#subject_id').val();
+                    $.ajax({
+                        type: 'POST',
+                        url: 'subject_list.php',
+                        data: $(form).serialize(),
+                        success: function () {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Deleted!',
+                                text: 'Subject has been deleted.',
+                                showConfirmButton: false,
+                                timer: 2000
+                            }).then(() => {
+
+                                window.location.href = 'subject_list.php';
+                            });
+                        },
+                        error: function () {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Oops...',
+                                text: 'Failed to delete the subject!',
+                            });
+                        }
+                    });
+                }
+            });
+        });
+    });
+</script>
+<script>
+    document.getElementById('searchInput').addEventListener('keyup', function () {
+        var searchValue = this.value.toLowerCase();
+        var rows = document.querySelectorAll('#list tbody tr');
+        var noRecordsMessage = document.getElementById('noRecordsMessage');
+        var matchesFound = false;
+
+        rows.forEach(function (row) {
+            var cells = row.querySelectorAll('td');
+            var matches = false;
+
+            cells.forEach(function (cell) {
+                if (cell.textContent.toLowerCase().includes(searchValue)) {
+                    matches = true;
+                }
+            });
+
+            if (matches) {
+                row.style.display = '';
+                matchesFound = true;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        if (matchesFound) {
+            noRecordsMessage.style.display = 'none';
+        } else {
+            noRecordsMessage.style.display = '';
+        }
+    });
+</script>
+<style>
+    .list-group-item:hover {
+        color: black !important;
+        font-weight: 700 !important;
+    }
+
+    body {
+        overflow-y: hidden;
+    }
+
+    html {
+        scroll-behavior: smooth;
+    }
+
+    .main-header {
+        max-height: 100vh;
+        overflow-y: scroll;
+        scrollbar-width: none;
+        scroll-behavior: smooth;
+    }
+
+    .main-header::-webkit-scrollbar {
+        display: none;
+    }
+</style>

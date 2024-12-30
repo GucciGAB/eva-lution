@@ -6,7 +6,6 @@ if (!isset($_SESSION['user'])) {
 }
 
 if ($_SESSION['user']['role'] !== 'admin') {
-    // Redirect to an unauthorized page or login page if they don't have the correct role
     header('Location: unauthorized.php');
     exit;
 }
@@ -23,14 +22,14 @@ include '../database/connection.php';
 
 $id = isset($_GET['student_id']) ? $_GET['student_id'] : null;
 
-$stmt = $conn->prepare("
-    SELECT student_list.*, 
-           CONCAT(class_list.course, ' ', class_list.level, ' - ', class_list.section) as class_name
-    FROM student_list
-    JOIN class_list ON student_list.class_id = class_list.class_id
-");
-$stmt->execute();
-$students = $stmt->fetchAll(PDO::FETCH_ASSOC);
+// $stmt = $conn->prepare("
+//     SELECT student_list.*, 
+//            CONCAT(class_list.course, ' ', class_list.level, ' - ', class_list.section) as class_name
+//     FROM student_list
+//     JOIN class_list ON student_list.class_id = class_list.class_id
+// ");
+// $stmt->execute();
+// $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $classes = [];
 $stmt = $conn->query("SELECT class_id, concat(course, ' ', level, ' - ', section) as class_name FROM class_list");
@@ -46,106 +45,126 @@ if ($id) {
     $student = $stmt->fetch(PDO::FETCH_ASSOC);
 }
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && !isset($_POST['delete_id'])) {
-    $school_id = $_POST['school_id'];
-    $firstname = $_POST['firstname'];
-    $lastname = $_POST['lastname'];
-    $class_id = $_POST['class_id'];
-    $email = $_POST['email'];
-    $password = $_POST['password'];
-    $cpass = $_POST['cpass'];
-    $avatar = isset($_FILES['img']['name']) ? $_FILES['img']['name'] : null;
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!isset($_POST['delete_id'])) {
+        $school_id = $_POST['school_id'];
+        $firstname = $_POST['firstname'];
+        $lastname = $_POST['lastname'];
+        $class_id = $_POST['class_id'];
+        $email = $_POST['email'];
+        $password = $_POST['password'];
+        $cpass = $_POST['cpass'];
+        $avatar = isset($_FILES['img']['name']) ? $_FILES['img']['name'] : null;
+        $id = $_POST['student_id'] ?? null; 
 
-    if (!empty($password) && $password !== $cpass) {
-        echo "<script>alert('Passwords do not match');</script>";
-        return;
-    }
-
-    if (!empty($password)) {
-        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-    }
-
-    if ($avatar) {
-        $target_dir = "uploads/";
-        $target_file = $target_dir . basename($_FILES["img"]["name"]);
-        move_uploaded_file($_FILES["img"]["tmp_name"], $target_file);
-    }
-
-    if ($id) {
-        $query = "UPDATE student_list 
-                  SET school_id = :school_id, firstname = :firstname, lastname = :lastname, class_id = :class_id, email = :email";
+        if (!empty($password) && $password !== $cpass) {
+            echo "<script>
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops...',
+                        text: 'Passwords do not match.',
+                    });
+                  </script>";
+            return;
+        }
 
         if (!empty($password)) {
-            $query .= ", password = :password";
+            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
         }
 
         if ($avatar) {
-            $query .= ", avatar = :avatar";
+            $target_dir = "assets/uploads/";
+            $target_file = $target_dir . basename($_FILES["img"]["name"]);
+            move_uploaded_file($_FILES["img"]["tmp_name"], $target_file);
         }
 
-        $query .= " WHERE student_id = :id";
-        $stmt = $conn->prepare($query);
+        if ($id) {
+            $query = "UPDATE student_list 
+                      SET school_id = :school_id, firstname = :firstname, lastname = :lastname, class_id = :class_id, email = :email";
 
-        
-        $stmt->bindParam(':school_id', $school_id);
-        $stmt->bindParam(':firstname', $firstname);
-        $stmt->bindParam(':lastname', $lastname);
-        $stmt->bindParam(':class_id', $class_id);
-        $stmt->bindParam(':email', $email);
+            if (!empty($password)) {
+                $query .= ", password = :password";
+            }
 
-        if (!empty($password)) {
+            if ($avatar) {
+                $query .= ", avatar = :avatar";
+            }
+
+            $query .= " WHERE student_id = :student_id";
+            $stmt = $conn->prepare($query);
+
+            $stmt->bindParam(':school_id', $school_id);
+            $stmt->bindParam(':firstname', $firstname);
+            $stmt->bindParam(':lastname', $lastname);
+            $stmt->bindParam(':class_id', $class_id);
+            $stmt->bindParam(':email', $email);
+
+            if (!empty($password)) {
+                $stmt->bindParam(':password', $hashed_password);
+            }
+
+            if ($avatar) {
+                $stmt->bindParam(':avatar', $avatar);
+            }
+
+            $stmt->bindParam(':student_id', $id, PDO::PARAM_INT);
+        } else {
+            $query = "INSERT INTO student_list (school_id, firstname, lastname, class_id, email, password, avatar) 
+                      VALUES (:school_id, :firstname, :lastname, :class_id, :email, :password, :avatar)";
+            $stmt = $conn->prepare($query);
+
+            $stmt->bindParam(':school_id', $school_id);
+            $stmt->bindParam(':firstname', $firstname);
+            $stmt->bindParam(':lastname', $lastname);
+            $stmt->bindParam(':class_id', $class_id);
+            $stmt->bindParam(':email', $email);
             $stmt->bindParam(':password', $hashed_password);
-        }
-
-        if ($avatar) {
             $stmt->bindParam(':avatar', $avatar);
         }
 
-        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        if ($stmt->execute()) {
+            sendEmail($email, $password);
 
-    } else {
-        
-        $query = "INSERT INTO student_list (school_id, firstname, lastname, class_id, email, password, avatar) 
-                  VALUES (:school_id, :firstname, :lastname, :class_id, :email, :password, :avatar)";
-        $stmt = $conn->prepare($query);
+            echo "<script>
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: 'Student information saved successfully.',
+                        showConfirmButton: false,
+                        timer: 2000
+                    }).then(() => {
+                        window.location.replace('student_list.php');
+                    });
+                  </script>";
+        } else {
+            echo "<script>
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops...',
+                        text: 'Error saving data. Please try again.',
+                    });
+                  </script>";
+        }
 
-        
-        $stmt->bindParam(':school_id', $school_id);
-        $stmt->bindParam(':firstname', $firstname);
-        $stmt->bindParam(':lastname', $lastname);
-        $stmt->bindParam(':class_id', $class_id);
-        $stmt->bindParam(':email', $email);
-        $stmt->bindParam(':password', $hashed_password);
-        $stmt->bindParam(':avatar', $avatar);
+        $conn = null;
     }
 
+    if (isset($_POST['delete_id'])) {
+        $delete_id = $_POST['delete_id'];
     
-    if ($stmt->execute()) {
-        sendEmail($email, $password);
+        $stmt = $conn->prepare('DELETE FROM student_list WHERE student_id = :id');
+        $stmt->bindParam(':id', $delete_id, PDO::PARAM_INT);
+    
+        if ($stmt->execute()) {
+            $_SESSION['message'] = 'Student deleted successfully.';
+        } else {
+            error_log('Error deleting student');
+            $_SESSION['error'] = 'Error deleting student. Please try again.';
+        }
+    
         echo "<script>window.location.replace('student_list.php');</script>";
-    } else {
-        echo "<script>alert('Error saving data.');</script>";
-    }
-
-    $conn = null; 
+    }    
 }
-
-if (isset($_POST['delete_id'])) {
-    $delete_id = $_POST['delete_id'];
-
-    $stmt = $conn->prepare('DELETE FROM student_list WHERE student_id = :id');
-    $stmt->bindParam(':id', $delete_id, PDO::PARAM_INT);
-
-    if ($stmt->execute()) {
-        echo "<script>alert('Student deleted successfully.');</script>";
-    } else {
-        echo "<script>alert('Error deleting student.');</script>";
-    }
-
-    echo "<script>window.location.replace('student_list.php');</script>";
-}
-
-$conn = null;
 
 function sendEmail($toEmail, $plainPassword) {
     $mail = new PHPMailer(true);
@@ -156,11 +175,11 @@ function sendEmail($toEmail, $plainPassword) {
         $mail->Host       = 'smtp.gmail.com';                       
         $mail->SMTPAuth   = true;                                   
         $mail->Username   = 'evaluationspc@gmail.com';                 
-        $mail->Password   = 'ctet pnsr jirf ohpl';                    
+        $mail->Password   = 'zjwz wnqx oyew nwst';                    
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;         
         $mail->Port       = 587;                                    
 
-        $mail->setFrom('your_email@gmail.com', 'Your Name');
+        $mail->setFrom('your_email@gmail.com', 'SPC_EVAL');
         $mail->addAddress($toEmail);                                
 
         $mail->isHTML(true);                                        

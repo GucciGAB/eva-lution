@@ -6,7 +6,6 @@ if (!isset($_SESSION['user'])) {
 }
 
 if ($_SESSION['user']['role'] !== 'admin') {
-    // Redirect to an unauthorized page or login page if they don't have the correct role
     header('Location: unauthorized.php');
     exit;
 }
@@ -34,102 +33,162 @@ if ($id) {
     $admin = $stmt->fetch(PDO::FETCH_ASSOC);
 }
 
-// Handle form submission
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && !isset($_POST['delete_id'])) {
-    $firstname = $_POST['firstname'];
-    $lastname = $_POST['lastname'];
-    $email = $_POST['email'];
-    $password = $_POST['password'];
-    $cpass = $_POST['cpass'];
-    $avatar = isset($_FILES['img']['name']) ? $_FILES['img']['name'] : null;
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    if (!isset($_POST['delete_id'])) {
+        $firstname = $_POST['firstname'];
+        $lastname = $_POST['lastname'];
+        $email = $_POST['email'];
+        $password = $_POST['password'];
+        $cpass = $_POST['cpass'];
+        $avatar = isset($_FILES['img']['name']) ? $_FILES['img']['name'] : null;
+        $id = $_POST['id'] ?? null;
 
-    if (!empty($password) && $password !== $cpass) {
-        echo "<script>alert('Passwords do not match');</script>";
-        return;
-    }
-
-    if (!empty($password)) {
-        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-    }
-
-    if ($avatar) {
-        $target_dir = "uploads/";
-        $target_file = $target_dir . basename($_FILES["img"]["name"]);
-        move_uploaded_file($_FILES["img"]["tmp_name"], $target_file);
-    }
-
-    if ($id) {
-        // Update query
-        $query = "UPDATE users 
-                  SET firstname = :firstname, lastname = :lastname, email = :email";
-
-        if (!empty($password)) {
-            $query .= ", password = :password";
+        // Check if passwords match
+        if (!empty($password) && $password !== $cpass) {
+            echo "<script>
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops...',
+                        text: 'Passwords do not match.',
+                    });
+                  </script>";
+            return;
         }
 
+        // Hash password if not empty
+        if (!empty($password)) {
+            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+        }
+
+        // Upload avatar if provided
         if ($avatar) {
-            $query .= ", avatar = :avatar";
+            $target_dir = "assets/uploads/";
+            $target_file = $target_dir . basename($_FILES["img"]["name"]);
+            move_uploaded_file($_FILES["img"]["tmp_name"], $target_file);
         }
 
-        $query .= " WHERE id = :id";
-        $stmt = $conn->prepare($query);
+        // Fetch the current active academic_id
+        $query = 'SELECT academic_id FROM academic_list WHERE status = 1 AND start_date <= CURDATE() AND end_date >= CURDATE()';
+        $stmt = $conn->query($query);
+        $academic = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        // Bind parameters
-        $stmt->bindParam(':firstname', $firstname);
-        $stmt->bindParam(':lastname', $lastname);
-        $stmt->bindParam(':email', $email);
+        if (!$academic) {
+            echo "<script>
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'No Active Academic Year!',
+                        text: 'Registration is not allowed as there is no active academic year.',
+                    });
+                  </script>";
+            return;
+        }
 
-        if (!empty($password)) {
+        $academic_id = $academic['academic_id']; // Active academic ID
+
+        // Update or Insert
+        if ($id) {
+            $query = "UPDATE users 
+                      SET firstname = :firstname, lastname = :lastname, email = :email, academic_id = :academic_id";
+
+            if (!empty($password)) {
+                $query .= ", password = :password";
+            }
+
+            if ($avatar) {
+                $query .= ", avatar = :avatar";
+            }
+
+            $query .= " WHERE id = :id";
+            $stmt = $conn->prepare($query);
+
+            $stmt->bindParam(':firstname', $firstname);
+            $stmt->bindParam(':lastname', $lastname);
+            $stmt->bindParam(':email', $email);
+            $stmt->bindParam(':academic_id', $academic_id);
+
+            if (!empty($password)) {
+                $stmt->bindParam(':password', $hashed_password);
+            }
+
+            if ($avatar) {
+                $stmt->bindParam(':avatar', $avatar);
+            }
+
+            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        } else {
+            $query = "INSERT INTO users (firstname, lastname, email, password, avatar, academic_id) 
+                      VALUES (:firstname, :lastname, :email, :password, :avatar, :academic_id)";
+            $stmt = $conn->prepare($query);
+
+            $stmt->bindParam(':firstname', $firstname);
+            $stmt->bindParam(':lastname', $lastname);
+            $stmt->bindParam(':email', $email);
             $stmt->bindParam(':password', $hashed_password);
-        }
-
-        if ($avatar) {
             $stmt->bindParam(':avatar', $avatar);
+            $stmt->bindParam(':academic_id', $academic_id);
         }
 
-        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        // Execute and send feedback
+        if ($stmt->execute()) {
+            sendEmail($email, $password); // Optional: send email to the user
 
-    } else {
-        // Insert query
-        $query = "INSERT INTO users (firstname, lastname, email, password, avatar) 
-                  VALUES (:firstname, :lastname, :email, :password, :avatar)";
-        $stmt = $conn->prepare($query);
+            echo "<script>
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: 'User information saved successfully.',
+                        showConfirmButton: false,
+                        timer: 2000
+                    }).then(() => {
+                        window.location.replace('user_list.php');
+                    });
+                  </script>";
+        } else {
+            echo "<script>
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops...',
+                        text: 'Error saving data. Please try again.',
+                    });
+                  </script>";
+        }
 
-        // Bind parameters for insert
-        $stmt->bindParam(':firstname', $firstname);
-        $stmt->bindParam(':lastname', $lastname);
-        $stmt->bindParam(':email', $email);
-        $stmt->bindParam(':password', $hashed_password);
-        $stmt->bindParam(':avatar', $avatar);
+        $conn = null;
     }
 
-    // Execute query
-    if ($stmt->execute()) {
-        sendEmail($email, $password);
-        echo "<script>window.location.replace('user_list.php');</script>";
-    } else {
-        echo "<script>alert('Error saving data.');</script>";
-    }
+    if (isset($_POST['delete_id'])) {
+        $delete_id = $_POST['delete_id'];
 
-    $conn = null; // Close connection
+        $stmt = $conn->prepare('DELETE FROM users WHERE id = :id');
+        $stmt->bindParam(':id', $delete_id, PDO::PARAM_INT);
+
+        if ($stmt->execute()) {
+            echo "<script>
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Deleted!',
+                        text: 'User deleted successfully.',
+                        showConfirmButton: false,
+                        timer: 2000
+                    }).then(() => {
+                        window.location.replace('user_list.php');
+                    });
+                  </script>";
+        } else {
+            echo "<script>
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops...',
+                        text: 'Error deleting user. Please try again.',
+                    });
+                  </script>";
+        }
+    }
 }
 
-if (isset($_POST['delete_id'])) {
-    $delete_id = $_POST['delete_id'];
-
-    $stmt = $conn->prepare('DELETE FROM users WHERE id = :id');
-    $stmt->bindParam(':id', $delete_id, PDO::PARAM_INT);
-
-    if ($stmt->execute()) {
-        echo "<script>alert('Admin deleted successfully.');</script>";
-    } else {
-        echo "<script>alert('Error deleting admin.');</script>";
-    }
-
-    echo "<script>window.location.replace('user_list.php');</script>";
-}
 
 $conn = null;
+
 
 function sendEmail($toEmail, $plainPassword) {
     $mail = new PHPMailer(true);
@@ -140,17 +199,17 @@ function sendEmail($toEmail, $plainPassword) {
         $mail->Host       = 'smtp.gmail.com';                       
         $mail->SMTPAuth   = true;                                   
         $mail->Username   = 'evaluationspc@gmail.com';                 
-        $mail->Password   = 'ctet pnsr jirf ohpl';                    
+        $mail->Password   = 'zjwz wnqx oyew nwst';                    
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;         
         $mail->Port       = 587;                                    
 
-        $mail->setFrom('your_email@gmail.com', 'Your Name');
+        $mail->setFrom('your_email@gmail.com', 'SPC_EVAL');
         $mail->addAddress($toEmail);                                
 
         $mail->isHTML(true);                                        
         $mail->Subject = 'Account Created';
-        $mail->Body    = "Dear Student,<br>Your account has been created successfully.<br><b>Email:</b> $toEmail<br><b>Password:</b> $plainPassword<br><br>Thank you!";
-        $mail->AltBody = "Dear Student,\nYour account has been created successfully.\nEmail: $toEmail\nPassword: $plainPassword\n\nThank you!";
+        $mail->Body    = "Dear Admin,<br>Your account has been created successfully.<br><b>Email:</b> $toEmail<br><b>Password:</b> $plainPassword<br><br>Thank you!";
+        $mail->AltBody = "Dear Admin,\nYour account has been created successfully.\nEmail: $toEmail\nPassword: $plainPassword\n\nThank you!";
 
         $mail->send();
         echo 'Email has been sent';

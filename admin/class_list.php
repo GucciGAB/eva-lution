@@ -13,6 +13,11 @@ include 'handlers/class_handler.php';
                     </a>
                 </div>
             </div>
+            <div class="row mb-3">
+                <div class="col-8 col-md-4 ms-auto mt-3 mr-3">
+                    <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Search Class">
+                </div>
+            </div>
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-hover table-bordered" id="list">
@@ -44,11 +49,11 @@ include 'handlers/class_handler.php';
                                                 class="btn btn-success  manage_class">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <form method="post" action="class_list.php" style="display: inline;">
+                                            <form method="post" action="class_list.php" style="display: inline;"
+                                                class="delete-form">
                                                 <input type="hidden" name="delete_id"
                                                     value="<?php echo isset($row['class_id']) ? $row['class_id'] : ''; ?>">
-                                                <button type="submit" class="btn btn-secondary  delete_class"
-                                                    onclick="return confirm('Are you sure you want to delete this class?');">
+                                                <button type="submit" class="btn btn-secondary  delete_class">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </form>
@@ -58,6 +63,7 @@ include 'handlers/class_handler.php';
                             <?php endforeach; ?>
                         </tbody>
                     </table>
+                    <p id="noRecordsMessage" style="display:none; color: black;" class="ml-1">No classes found.</p>
                 </div>
             </div>
         </div>
@@ -66,47 +72,97 @@ include 'handlers/class_handler.php';
 
 <script>
     $(document).ready(function () {
-        // Initialize DataTable
-        $('#list').dataTable();
+        $(document).on('submit', '.delete-form', function (e) {
+            e.preventDefault();
+            var form = this;
 
-        // Event for adding a new class
-        $('.new_class').on('click', function () {
-            uni_modal("New Class", "<?php echo $_SESSION['login_view_folder'] ?>manage_class.php");
-        });
-
-        // Event for managing a class (edit)
-        $('.manage_class').on('click', function () {
-            const classId = $(this).data('id');
-            uni_modal("Manage Class", "<?php echo $_SESSION['login_view_folder'] ?>manage_class.php?id=" + classId);
-        });
-
-        // Event for deleting a class
-        $('.delete_class').on('click', function () {
-            const classId = $(this).data('id');
-            _conf("Are you sure you want to delete this class?", "delete_class", [classId]);
+            Swal.fire({
+                title: 'Are you sure?',
+                text: 'This action will permanently delete the class.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, delete it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        type: 'POST',
+                        url: 'class_list.php',
+                        data: $(form).serialize(),
+                        success: function () {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Deleted!',
+                                text: 'Class has been deleted.',
+                                showConfirmButton: false,
+                                timer: 2000
+                            }).then(() => {
+                                window.location.href = 'class_list.php';
+                            });
+                        },
+                        error: function () {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Oops...',
+                                text: 'Failed to delete the class!',
+                            });
+                        }
+                    });
+                }
+            });
         });
     });
+</script>
+<script>
+    document.getElementById('searchInput').addEventListener('keyup', function () {
+        var searchValue = this.value.toLowerCase();
+        var rows = document.querySelectorAll('#list tbody tr');
+        var noRecordsMessage = document.getElementById('noRecordsMessage');
+        var matchesFound = false;
 
-    // Function to delete a class using AJAX
-    function delete_class(id) {
-        start_load();
-        $.ajax({
-            url: 'ajax.php?action=delete_class',
-            method: 'POST',
-            data: { id: id },
-            success: function (response) {
-                if (response == 1) {
-                    alert_toast("Data successfully deleted", 'success');
-                    setTimeout(function () {
-                        location.reload(); // Reload the page after deletion
-                    }, 1500);
-                } else {
-                    alert_toast("Failed to delete data", 'error');
+        rows.forEach(function (row) {
+            var cells = row.querySelectorAll('td');
+            var matches = false;
+
+            cells.forEach(function (cell) {
+                if (cell.textContent.toLowerCase().includes(searchValue)) {
+                    matches = true;
                 }
-            },
-            error: function (xhr, status, error) {
-                alert_toast("An error occurred: " + error, 'error');
+            });
+
+            if (matches) {
+                row.style.display = '';
+                matchesFound = true;
+            } else {
+                row.style.display = 'none';
             }
         });
-    }
+
+        if (matchesFound) {
+            noRecordsMessage.style.display = 'none';
+        } else {
+            noRecordsMessage.style.display = '';
+        }
+    });
 </script>
+<style>
+    .list-group-item:hover {
+        color: black !important;
+        font-weight: 700 !important;
+    }
+
+    body {
+        overflow-y: hidden;
+    }
+
+    .main-header {
+        max-height: 100vh;
+        overflow-y: scroll;
+        scrollbar-width: none;
+    }
+
+    .main-header::-webkit-scrollbar {
+        display: none;
+    }
+</style>
