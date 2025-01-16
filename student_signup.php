@@ -5,7 +5,7 @@ include "submit_registration.php";
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-6">
-            <div class="login-box">
+            <div class="login-box mb-5">
                 <div class="card">
                     <div class="card-body login-card-body">
                         <div class="login-logo mb-4">
@@ -49,7 +49,7 @@ include "submit_registration.php";
                             <div id="subjects-container">
                                 <div class="input-group mb-3 subject-item">
                                     <input type="text" class="form-control" name="subjects[]" required
-                                        placeholder="Subject">
+                                        placeholder="subject code (cc101)">
                                     <div class="input-group-append">
                                         <button type="button" class="btn btn-success add-subject">
                                             <i class="fas fa-plus"></i>

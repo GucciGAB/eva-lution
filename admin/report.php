@@ -3,6 +3,8 @@
 include "handlers/report_handler.php";
 
 ?>
+
+<div class="content">
 <nav class="main-header">
     <div class="col-lg-12 mt-3">
         <div class="col-12 mb-3">
@@ -10,17 +12,21 @@ include "handlers/report_handler.php";
                 style="font-size: 1.8rem; font-weight: bold; color: #4a4a4a; border-bottom: 2px solid #ccc; padding-bottom: 5px;">
                 Evaluation Report</h2>
         </div>
-        <div class="callout callout-success">
+        <div class="callout callout-success" id="facultySelection">
             <div class="d-flex w-100 justify-content-center align-items-center">
                 <label for="faculty">Select Faculty</label>
-                <div class=" mx-2 col-md-4">
+                <div class="mx-2 col-md-4">
                     <select name="" id="faculty_id" class="form-control form-control-sm select2">
                         <option value="">Select Faculty</option>
                         <?php
-                        $stmt = $conn->query("SELECT faculty_id, firstname, lastname FROM college_faculty_list");
+                        $stmt = $conn->query("
+                            SELECT faculty_id, firstname, lastname, 'faculty' AS type FROM college_faculty_list
+                            UNION
+                            SELECT head_id AS faculty_id, firstname, lastname, 'dean' AS type FROM head_faculty_list
+                        ");
                         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                             $fullName = htmlspecialchars($row['firstname'] . ' ' . $row['lastname']);
-                            echo '<option value="' . $row['faculty_id'] . '" data-name="' . $fullName . '">' . $fullName . '</option>';
+                            echo '<option value="' . $row['faculty_id'] . '" data-type="' . $row['type'] . '" data-name="' . $fullName . '">' . $fullName . '</option>';
                         }
                         ?>
                     </select>
@@ -30,8 +36,12 @@ include "handlers/report_handler.php";
         <div class="row">
             <div class="col-md-12 mb-1">
                 <div class="d-flex justify-content-end w-100">
-                    <button class="btn btn-sm btn-success bg-gradient-success mr-3" id="print-btn"><i
-                            class="fa fa-print"></i> Print</button>
+                    <button class="btn btn-sm btn-success bg-gradient-success mr-3" id="print-btn">
+                        <i class="fa fa-print"></i> Print
+                    </button>
+                    <button class="btn btn-sm btn-info bg-gradient-success mr-3" id="export-csv-btn">
+                        <i class="fa fa-file-csv"></i> Export to CSV
+                    </button>
                 </div>
             </div>
         </div>
@@ -39,7 +49,19 @@ include "handlers/report_handler.php";
             <div class="col-md-3">
                 <div class="callout callout-success">
                     <div class="list-group" id="class-list">
-
+                        <div class="d-flex w-100 justify-content-center align-items-center">
+                            <label for="category">Select Category</label>
+                            <div class="mx-2 col-md-8">
+                                <select id="category" class="form-control form-control-sm">
+                                    <option value="faculty">Student to Faculty</option>
+                                    <option value="self">Self Faculty</option>
+                                    <option value="dean_self">Self Head Faculty</option>
+                                    <option value="faculty_faculty">Faculty to Faculty</option>
+                                    <option value="faculty_head">Faculty to Head</option>
+                                    <option value="head_faculty">Head to Faculty</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -61,7 +83,7 @@ include "handlers/report_handler.php";
                             <tr>
                             </tr>
                         </table>
-                        <p class=""><b>Total Student Evaluated: <span id="tse">
+                        <p class=""><b>Total Evaluated: <span id="tse">
                                 </span></b></p>
                     </div>
                     <fieldset class="border border-success p-2 w-100">
@@ -130,24 +152,18 @@ include "handlers/report_handler.php";
             </div>
         </div>
 </nav>
+</div>
+
 <style>
     .list-group-item:hover {
         color: black !important;
         font-weight: 700 !important;
     }
 
-    body {
-        overflow-y: hidden;
-    }
-
-    .main-header {
+    .content .main-header {
         max-height: 90vh;
-        overflow-y: scroll;
-        scrollbar-width: none;
-    }
-
-    .main-header::-webkit-scrollbar {
-        display: none;
+        overflow-y: auto;
+        scroll-behavior: smooth;
     }
 
     .circle {
@@ -198,188 +214,284 @@ include "handlers/report_handler.php";
 </noscript>
 <script>
     document.getElementById('faculty_id').addEventListener('change', function () {
-        // Get the selected option
-        const selectedOption = this.options[this.selectedIndex];
-        // Get the faculty name from the `data-name` attribute
-        const facultyName = selectedOption.getAttribute('data-name') || '';
-        // Update the span content
+        const facultyId = this.value;
+        const facultyName = this.options[this.selectedIndex].getAttribute('data-name') || '';
+        const selectedCategory = document.getElementById('category').value;
+
         document.getElementById('fname').textContent = facultyName;
-    });
-</script>
-<script>
-    $(document).ready(function () {
-        $('#faculty_id').change(function () {
-            const facultyId = $(this).val();
-            if (facultyId) {
-                $.ajax({
-                    url: 'get_total_evaluated.php',
-                    method: 'GET',
-                    data: { faculty_id: facultyId },
-                    success: function (response) {
-                        $('#tse').text(response);
-                    },
-                    error: function () {
-                        alert('Failed to fetch data.');
-                    }
-                });
-            } else {
-                $('#tse').text(0);
-            }
-        });
-    });
-</script>
-<script>
-    document.getElementById('faculty_id').addEventListener('change', function () {
-        const facultyId = this.value;
-
-        const ratingsTable = document.querySelector('#printable .table-responsive');
-
-        if (facultyId) {
-            fetch(`get_faculty_ratings.php?faculty_id=${facultyId}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        ratingsTable.innerHTML = ''; // Clear previous data
-
-                        // Generate table structure
-                        const table = document.createElement('table');
-                        table.className = 'table table-condensed wborder';
-
-                        // Add table header
-                        const thead = `
-                        <thead>
-                            <tr class="bg-gradient-secondary">
-                                <th class="p-1"><b>Question</b></th>
-                                <th width="5%" class="text-center">1</th>
-                                <th width="5%" class="text-center">2</th>
-                                <th width="5%" class="text-center">3</th>
-                                <th width="5%" class="text-center">4</th>
-                            </tr>
-                        </thead>`;
-                        table.innerHTML = thead;
-
-                        // Add table body
-                        const tbody = document.createElement('tbody');
-                        data.data.forEach(row => {
-                            let questionRow = '';
-                            if (row.question_type === 'text') {
-                                // Handle open-ended questions with the question text and stored comment
-                                questionRow = `
-                                    <tr class="bg-white">
-                                        <td colspan="5">
-                                            <div><strong>${row.question}</strong></div>
-                                            <textarea name="comment[${row.question_id}]" class="form-control mt-2"
-                                                rows="3" placeholder="Enter your answer">${row.comment || ''}</textarea>
-                                        </td>
-                                    </tr>`;
-                            } else {
-                                // Handle rating questions
-                                questionRow = `
-                                    <tr class="bg-white">
-                                        <td class="p-1" width="20%">${row.question}</td>
-                                        <td class="text-center">
-                                            <div class="circle">${row.rate1}%</div>
-                                        </td>
-                                        <td class="text-center">
-                                            <div class="circle">${row.rate2}%</div>
-                                        </td>
-                                        <td class="text-center">
-                                            <div class="circle">${row.rate3}%</div>
-                                        </td>
-                                        <td class="text-center">
-                                            <div class="circle">${row.rate4}%</div>
-                                        </td>
-                                    </tr>`;
-                            }
-                            tbody.innerHTML += questionRow;
-                        });
-
-                        table.appendChild(tbody);
-
-                        // Append the complete table to the ratings container
-                        ratingsTable.appendChild(table);
-                    } else {
-                        console.error(data.message);
-                    }
-                })
-                .catch(error => console.error('Error fetching ratings:', error));
-        } else {
-            // Reset the table to its normal state
-            ratingsTable.innerHTML = `<br>
-                <p class="text-center text-muted">Select a faculty to view evaluation ratings.</p>
-            `;
-        }
-    });
-</script>
-<script>
-    document.getElementById('faculty_id').addEventListener('change', function () {
-        const facultyId = this.value;
         const academicYearDisplay = document.getElementById('ay');
+        const ratingsTable = document.querySelector('#printable .table-responsive');
+        const tse = document.getElementById('tse');
+
+        // Reset content
+        ratingsTable.innerHTML = `<br><p class="text-center text-muted">Select faculty to view evaluation ratings.</p>`;
+        academicYearDisplay.innerHTML = 'Select faculty to view year and semester.';
+        tse.textContent = 0;
 
         if (facultyId) {
-            fetch(`get_academic_info.php?faculty_id=${facultyId}`)
+            // Fetch academic year
+            fetch(`get_academic_info.php?faculty_id=${facultyId}&category=${selectedCategory}`)
                 .then(response => response.json())
                 .then(data => {
-                    if (data.status === 'success') {
-                        academicYearDisplay.innerHTML = `${data.year} - ${data.semester}`;
-                    } else {
-                        academicYearDisplay.innerHTML = 'No academic information available.';
-                    }
+                    academicYearDisplay.innerHTML = data.status === 'success' ? `${data.year} - ${data.semester}` : 'No academic information available.';
                 })
-                .catch(error => {
-                    console.error('Error fetching academic information:', error);
+                .catch(() => {
                     academicYearDisplay.innerHTML = 'Error fetching academic information.';
                 });
-        } else {
-            academicYearDisplay.innerHTML = 'Select a faculty to view academic year and semester.';
+
+            // Fetch total evaluated
+            fetch(`get_total_evaluated.php?faculty_id=${facultyId}&category=${selectedCategory}`)
+                .then(response => response.text())
+                .then(response => {
+                    tse.textContent = response;
+                })
+                .catch(() => {
+                    tse.textContent = 0;
+                });
+
+            // Fetch category-specific data
+            if (selectedCategory === 'self') {
+                fetch(`get_self_eval.php?faculty_id=${facultyId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        renderSelfEval(data, ratingsTable);
+                    })
+                    .catch(() => {
+                        ratingsTable.innerHTML = `<br><p class="text-center text-muted">Failed to fetch self-evaluation data.</p>`;
+                    });
+            } else if (selectedCategory === 'dean_self') {
+                fetch(`get_dean_self_eval.php?faculty_id=${facultyId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        renderSelfEval(data, ratingsTable);
+                    })
+                    .catch(() => {
+                        ratingsTable.innerHTML = `<br><p class="text-center text-muted">Failed to fetch dean self-evaluation data.</p>`;
+                    });
+            } else {
+                fetch(`get_faculty_ratings.php?faculty_id=${facultyId}&category=${selectedCategory}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            renderFacultyEval(data, ratingsTable);
+                        } else {
+                            ratingsTable.innerHTML = `<br><p class="text-center text-muted">${data.message || 'No evaluation ratings available.'}</p>`;
+                        }
+                    })
+                    .catch(() => {
+                        ratingsTable.innerHTML = `<br><p class="text-center text-muted">Failed to fetch evaluation ratings.</p>`;
+                    });
+            }
         }
     });
+
+    function renderSelfEval(data, container) {
+        if (data.status === 'success') {
+            container.innerHTML = `
+            <div class="mb-3">
+                <label for="skills" class="form-label">Skills (1-5):</label>
+                <input type="number" id="skills" name="skills" class="form-control" value="${data.skills}" readonly>
+            </div>
+            <div class="mb-3">
+                <label for="performance" class="form-label">Performance (1-5):</label>
+                <input type="number" id="performance" name="performance" class="form-control" value="${data.performance}" readonly>
+            </div>
+            <div class="mb-3">
+                <label for="comments" class="form-label">Comments:</label>
+                <textarea id="comments" name="comments" class="form-control" rows="4" readonly>${data.comments}</textarea>
+            </div>`;
+        } else {
+            container.innerHTML = `<br><p class="text-center text-muted">No self-evaluation data available.</p>`;
+        }
+    }
+
+    function renderFacultyEval(data, container) {
+    container.innerHTML = ''; // Clear previous data
+    const table = document.createElement('table');
+    table.className = 'table table-condensed wborder';
+    table.innerHTML = `
+        <thead>
+        <tr class="bg-gradient-secondary">
+            <th class="p-1">
+                <b>
+                    <?php
+                    // Check if there are questions and extract the criteria_id
+                    if (is_array($criteriaList) && !empty($criteriaList)) {
+                        // Assuming all questions share the same criteria_id
+                        echo htmlspecialchars($criteriaList[0]['criteria']);
+                    } else {
+                        echo 'Question';
+                    }
+                    ?>
+                </b>
+            </th>
+            <th width="5%" class="text-center">1</th>
+            <th width="5%" class="text-center">2</th>
+            <th width="5%" class="text-center">3</th>
+            <th width="5%" class="text-center">4</th>
+        </tr>
+    </thead>
+    `;
+    const tbody = document.createElement('tbody');
+    data.data.forEach(row => {
+        tbody.innerHTML += row.question_type === 'text'
+            ? `<tr class="bg-white">
+                <td colspan="5">
+                    <div><strong>${row.question}</strong></div>
+                    <div class="comment-display mt-2">${row.comments ? row.comments.join('<br>') : '<em>No comments provided.</em>'}</div>
+                </td>
+            </tr>`
+            : `<tr class="bg-white">
+                <td class="p-1" width="20%">${row.question}</td>
+                <td class="text-center"><div class="circle">${row.rate1}%</div></td>
+                <td class="text-center"><div class="circle">${row.rate2}%</div></td>
+                <td class="text-center"><div class="circle">${row.rate3}%</div></td>
+                <td class="text-center"><div class="circle">${row.rate4}%</div></td>
+            </tr>`;
+    });
+    table.appendChild(tbody);
+    container.appendChild(table);
+}
 </script>
 <script>
-    document.getElementById('print-btn').addEventListener('click', function () {
-        const printableContent = document.getElementById('printable').innerHTML;
-        console.log(printableContent);  // Debugging line
+document.getElementById('print-btn').addEventListener('click', function () {
+    const printableContent = document.getElementById('printable').cloneNode(true);
 
-        // Create a new window for printing
-        const printWindow = window.open('', '', 'width=800,height=600');
+    printableContent.querySelectorAll('td.text-left').forEach(td => {
+        td.style.textAlign = 'left'; // Ensure left alignment for all question cells
+    });
 
-        if (printWindow) {
-            // Write the content into the new window
-            printWindow.document.open();
-            printWindow.document.write(`
+    const printWindow = window.open('', '', 'width=800,height=600');
+
+    if (printWindow) {
+        printWindow.document.open();
+        printWindow.document.write(`
             <!DOCTYPE html>
             <html lang="en">
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Print Evaluation Report</title>
+                <title>Eval-Report</title>
                 <style>
                     body { font-family: Arial, sans-serif; line-height: 1.6; margin: 20px; }
                     table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-                    table, th, td { border: 1px solid black; padding: 8px; text-align: center; }
+                    table, th, td { border: 1px solid black; padding: 8px; }
                     .text-center { text-align: center; }
-                    .text-right { text-align: right; }
                     .text-left { text-align: left; }
                     .wborder { border: 1px solid gray; }
+                    .comment-display {
+                        font-size: 1rem;
+                        font-style: italic;
+                        color: #4a4a4a;
+                        text-align: left;
+                        margin-top: 10px;
+                    }
                 </style>
             </head>
             <body>
-                <h1 class="text-center">Evaluation Report</h1>
-                ${printableContent}
+                ${printableContent.innerHTML}
             </body>
             </html>
         `);
-            printWindow.document.close();
-
-            // Make sure the print window is printed
-            printWindow.onload = function () {
-                printWindow.print();
-                printWindow.onafterprint = function () {
-                    printWindow.close();
-                };
+        printWindow.document.close();
+        printWindow.onload = function () {
+            printWindow.print();
+            printWindow.onafterprint = function () {
+                printWindow.close();
             };
-        } else {
-            console.error('Unable to open the print window. It may have been blocked by the browser.');
+        };
+    } else {
+        console.error('Unable to open the print window. It may have been blocked by the browser.');
+    }
+});
+
+// Export to CSV
+document.getElementById('export-csv-btn').addEventListener('click', function () {
+    const facultyId = document.getElementById('faculty_id').value;
+    const selectedCategory = document.getElementById('category').value;
+
+    if (!facultyId) {
+        alert('Please select a faculty to export data.');
+        return;
+    }
+
+    const table = document.querySelector('#printable table');
+
+    // Start CSV content with headers for metadata
+    let csvContent = `Faculty Name:,${document.getElementById('fname').textContent}\n`;
+    csvContent += `Academic Year:,${document.getElementById('ay').textContent}\n`;
+    csvContent += `Total Evaluated:,${document.getElementById('tse').textContent}\n\n`;
+
+    // Add a separator before table data
+    csvContent += '--- Table Data ---\n';
+
+    // Fetch additional data and include it in the export
+    fetchAdditionalData(facultyId, selectedCategory, (additionalData) => {
+        if (additionalData.trim() !== '') {
+            csvContent += `\nAdditional Data:\n${additionalData}`;
         }
+
+        // Extract table headers
+        const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.innerText);
+        csvContent += headers.join(',') + '\n';
+
+        // Extract table rows
+        const rows = table.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+            const cells = Array.from(row.querySelectorAll('td')).map(cell => cell.innerText.trim());
+            csvContent += cells.join(',') + '\n';
+        });
+
+        // Create a downloadable CSV file
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', 'evaluation_report.csv');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     });
+});
+
+// Function to fetch additional data
+function fetchAdditionalData(facultyId, selectedCategory, callback) {
+    let urls = [];
+    if (selectedCategory === 'self') {
+        urls.push(`get_self_eval.php?faculty_id=${facultyId}`);
+    } else if (selectedCategory === 'dean_self') {
+        urls.push(`get_dean_self_eval.php?faculty_id=${facultyId}`);
+    } else {
+        urls.push(`get_faculty_ratings.php?faculty_id=${facultyId}&category=${selectedCategory}`);
+    }
+
+    // Fetch all URLs and collect data
+    Promise.all(urls.map(url => fetch(url).then(res => res.json())))
+        .then(responses => {
+            let additionalData = '';
+            responses.forEach(response => {
+                if (response.status === 'success') {
+                    response.data.forEach(item => {
+                        const formattedRow = Object.entries(item)
+                            .map(([key, value]) => `${key}: ${value}`)
+                            .join(', ');
+                        additionalData += formattedRow + '\n';
+                    });
+                } else {
+                    additionalData += 'No additional data available.\n';
+                }
+            });
+            callback(additionalData);
+        })
+        .catch(() => {
+            callback('Error fetching additional data.\n');
+        });
+}
 </script>
+<style>
+    .comment-display {
+        font-size: 1rem;
+        font-style: italic;
+        color: #4a4a4a;
+    }
+</style>

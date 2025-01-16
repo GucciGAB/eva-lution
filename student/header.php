@@ -102,7 +102,7 @@
         <a class="nav-link" data-toggle="dropdown" aria-expanded="false" href="javascript:void(0)">
           <span>
             <div class="d-flex badge-pill align-items-center">
-              <span class="mr-1"><img src="assets/uploads/def.png" alt="User" class="user-img border"></span>
+              <span class="mr-1"><img src="assets/uploads/default.png" alt="User" class="user-img border"></span>
               <span class="dropdown-text"><b><?php echo ucwords($_SESSION['login_name']) ?></b></span>
               <span class="fa fa-angle-down ml-2 dropdown-arrow"></span>
             </div>
@@ -130,7 +130,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-          <button type="button" class="btn btn-primary" id="saveAccountChanges">Save changes</button>
+          <button type="button" class="btn btn-success" id="saveAccountChanges">Save changes</button>
         </div>
       </div>
     </div>
