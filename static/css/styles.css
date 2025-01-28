@@ -57,7 +57,7 @@
 }
 
 .btn-primary {
-    background-color: rgb(51, 128, 64);
+    background-color: #007bff;
     border: none;
     width: 100%;
     padding: 10px;
@@ -65,20 +65,7 @@
 }
 
 .btn-primary:hover {
-    background-color: rgb(51, 128, 64);
-}
-
-
-.btn-green {
-    background-color: rgb(51, 128, 64);
-    border: none;
-    width: 100%;
-    padding: 10px;
-    margin-top: 10px;
-}
-
-.btn-green:hover {
-    background-color: rgb(51, 128, 64);
+    background-color: #0056b3;
 }
 
 .icheck-primary input[type="checkbox"]:checked + label::before {

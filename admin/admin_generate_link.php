@@ -1,7 +1,7 @@
 <?php
 include 'handlers/admin_link_handler.php';
 
-$generated_link = isset($_SESSION['generated_token']) ? "http://localhost/project-in-progress-main/student_signup.php?token=" . $_SESSION['generated_token'] : null;
+$generated_link = isset($_SESSION['generated_token']) ? "http://localhost/Capstone-Eva-lution/student_signup.php?token=" . $_SESSION['generated_token'] : null;
 ?>
 
 <div class="content">

@@ -57,6 +57,7 @@ $stmt->execute(['department' => $userDepartment]);
                             <label for="category">Select Category</label>
                             <div class="mx-2 col-md-8">
                                 <select id="category" class="form-control form-control-sm">
+                                    <option value="" selected disabled>Select Category</option>
                                     <option value="faculty">Student to Faculty</option>
                                     <option value="self">Self Faculty</option>
                                     <option value="faculty_faculty">Faculty to Faculty</option>
@@ -359,6 +360,14 @@ document.getElementById('print-btn').addEventListener('click', function () {
 
     printableContent.querySelectorAll('td.text-left').forEach(td => {
         td.style.textAlign = 'left'; // Ensure left alignment for all question cells
+    });
+
+    printableContent.querySelectorAll('input, textarea').forEach(el => {
+            const value = el.value || el.innerHTML;
+            const parent = el.parentElement;
+            const span = document.createElement('span');
+            span.textContent = value;
+            parent.replaceChild(span, el);
     });
 
     const printWindow = window.open('', '', 'width=800,height=600');
